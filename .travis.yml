@@ -60,29 +60,29 @@ jobs:
     - name: "Base Test OpenROAD"
       env: TEST_SET=spm TOOL=openroad_app REPO=OpenROAD BRANCH=master EXTRA_FLAGS=-so
     - name: "Fastest Test Set OpenROAD"
-      env: TEST_SET=fastestTestSet TOOL=openroad_app REPO=OpenROAD BRANCH=master
+      env: TEST_SET=fastestTestSet TOOL=openroad_app REPO=OpenROAD BRANCH=master EXTRA_FLAGS=-so
     - name: "Typical Test Set 1 OpenROAD"
-      env: TEST_SET=typicalTestSet1 TOOL=openroad_app REPO=OpenROAD BRANCH=master
+      env: TEST_SET=typicalTestSet1 TOOL=openroad_app REPO=OpenROAD BRANCH=master EXTRA_FLAGS=-so
     - name: "Typical Test Set 2 OpenROAD"
-      env: TEST_SET=typicalTestSet2 TOOL=openroad_app REPO=OpenROAD BRANCH=master
+      env: TEST_SET=typicalTestSet2 TOOL=openroad_app REPO=OpenROAD BRANCH=master EXTRA_FLAGS=-so
     - name: "BM64 OpenROAD"
-      env: TEST_SET=BM64 TOOL=openroad_app REPO=OpenROAD BRANCH=master
+      env: TEST_SET=BM64 TOOL=openroad_app REPO=OpenROAD BRANCH=master EXTRA_FLAGS=-so
     - name: "picorv32a OpenROAD"
-      env: TEST_SET=picorv32a TOOL=openroad_app REPO=OpenROAD BRANCH=master
+      env: TEST_SET=picorv32a TOOL=openroad_app REPO=OpenROAD BRANCH=master EXTRA_FLAGS=-so
     - name: "chacha OpenROAD"
-      env: TEST_SET=chacha TOOL=openroad_app REPO=OpenROAD BRANCH=master
+      env: TEST_SET=chacha TOOL=openroad_app REPO=OpenROAD BRANCH=master EXTRA_FLAGS=-so
     - name: "des OpenROAD"
-      env: TEST_SET=des TOOL=openroad_app REPO=OpenROAD BRANCH=master
+      env: TEST_SET=des TOOL=openroad_app REPO=OpenROAD BRANCH=master EXTRA_FLAGS=-so
     - name: "blabla OpenROAD"
-      env: TEST_SET=blabla TOOL=openroad_app REPO=OpenROAD BRANCH=master
+      env: TEST_SET=blabla TOOL=openroad_app REPO=OpenROAD BRANCH=master EXTRA_FLAGS=-so
     - name: "PPU OpenROAD"
-      env: TEST_SET=PPU TOOL=openroad_app REPO=OpenROAD BRANCH=master
+      env: TEST_SET=PPU TOOL=openroad_app REPO=OpenROAD BRANCH=master EXTRA_FLAGS=-so
     - name: "aes_cipher OpenROAD"
-      env: TEST_SET=aes_cipher TOOL=openroad_app REPO=OpenROAD BRANCH=master
+      env: TEST_SET=aes_cipher TOOL=openroad_app REPO=OpenROAD BRANCH=master EXTRA_FLAGS=-so
     - name: "y_huff OpenROAD"
-      env: TEST_SET=y_huff TOOL=openroad_app REPO=OpenROAD BRANCH=master
+      env: TEST_SET=y_huff TOOL=openroad_app REPO=OpenROAD BRANCH=master EXTRA_FLAGS=-so
     - name: "ldpcenc OpenROAD"
-      env: TEST_SET=ldpcenc TOOL=openroad_app REPO=OpenROAD BRANCH=master
+      env: TEST_SET=ldpcenc TOOL=openroad_app REPO=OpenROAD BRANCH=master EXTRA_FLAGS=-so
     - name: "Base Test Yosys"
       env: TEST_SET=spm TOOL=yosys REPO=yosys BRANCH=master EXTRA_FLAGS=-so
     - name: "Fastest Test Set Yosys"
@@ -141,9 +141,9 @@ before_install:
 
 install:
   - if [ $TRAVIS_BRANCH == "develop-latest_pdk" ]; then
-      sh travisCI/travisBuildLatestPDK.sh;
+      sh travisCI/utils/bash_run_wrapper.sh travisCI/travisBuildLatestPDK.sh;
     else
-      sh travisCI/travisBuild.sh;
+      sh travisCI/utils/bash_run_wrapper.sh travisCI/travisBuild.sh;
     fi
 
 script:
