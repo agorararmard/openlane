@@ -1,0 +1,9 @@
+diff --git a/src/TritonCTS/include/tritoncts/TritonCTS.h b/src/TritonCTS/include/tritoncts/TritonCTS.h
+index e2e804fc..9b6c24ff 100644
+--- a/src/TritonCTS/include/tritoncts/TritonCTS.h
++++ b/src/TritonCTS/include/tritoncts/TritonCTS.h
+@@ -36,6 +36,7 @@
+ #pragma once #include <functional>
++#include <string> namespace ord {
+ class OpenRoad;
+ 
