@@ -20,6 +20,7 @@ RUN yum group install -y "Development Tools" \
     && yum install -y https://repo.ius.io/ius-release-el7.rpm \
     && yum install -y centos-release-scl \
     && yum install -y wget devtoolset-8 \
+    && yum install -y qt5-qtbase-devel \
     devtoolset-8-libatomic-devel tcl-devel tcl tk libstdc++ tk-devel pcre-devel \
     python36u python36u-libs python36u-devel python36u-pip && \
     yum clean -y all && \
@@ -87,12 +88,13 @@ RUN git clone https://gitlab.com/libeigen/eigen.git --branch=3.3 \
     && cmake .. \
     && make install
 
+# lemon required by TritonCTS (no package for CentOS!)
+#  (On Ubuntu liblemon-dev can be used instead)
 RUN cd / && wget http://lemon.cs.elte.hu/pub/sources/lemon-1.3.1.tar.gz \
     && tar -xf lemon-1.3.1.tar.gz \
     && cd lemon-1.3.1 \
     && cmake -B build . \
     && cmake --build build -j $(nproc) --target install
-
 
 RUN yum install -y gettext-devel help2man texinfo \
     && git clone https://github.com/westes/flex \
