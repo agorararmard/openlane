@@ -17,7 +17,7 @@ This documentation is also available at ReadTheDocs [here](https://openlane.read
     - [Installation Notes](#installation-notes)
 - [Updating OpenLANE](#updating-openlane)
 - [Setting up OpenLANE](#setting-up-openlane)
-    - [Building the OpenLANE Docker](#building-the-openlane-docker)
+    - [Building the OpenLANE Docker Container](#building-the-openlane-docker-container)
     - [Running OpenLANE](#running-openlane)
     - [Command line arguments](#command-line-arguments)
     - [Adding a design](#adding-a-design)
@@ -34,7 +34,7 @@ This documentation is also available at ReadTheDocs [here](https://openlane.read
 
 # Overview
 
-OpenLANE is an automated RTL to GDSII flow based on several components including OpenROAD, Yosys, Magic, Netgen, Fault, OpenPhySyn, CVC, SPEF-Extractor and custom methodology scripts for design exploration and optimization. The flow performs full ASIC implementation steps from RTL all the way down to GDSII - this capability will be released in the coming weeks with completed SoC design examples that have been sent to SkyWater for fabrication.
+OpenLANE is an automated RTL to GDSII flow based on several components including OpenROAD, Yosys, Magic, Netgen, Fault, OpenPhySyn, CVC, SPEF-Extractor, CU-GR, Klayout and custom methodology scripts for design exploration and optimization. The flow performs full ASIC implementation steps from RTL all the way down to GDSII - this capability will be released in the coming weeks with completed SoC design examples that have been sent to SkyWater for fabrication.
 
 Join the community on [slack](https://invite.skywater.tools)!
 
@@ -49,7 +49,8 @@ You can start setting up the skywater-pdk and openlane by running:
 ```bash
     git clone https://github.com/efabless/openlane.git --branch rc7
     cd openlane/
-    export PDK_ROOT=<absolute path to where skywater-pdk and open_pdks will reside>
+    # Default PDK_ROOT is $(pwd)/pdks. If you want to install the PDK at a differnt location, uncomment the next line.
+    #export PDK_ROOT=<absolute path to where skywater-pdk and open_pdks will reside>
     make openlane
     make pdk
     make test # This is to test that the flow and the pdk were properly installed
@@ -69,15 +70,17 @@ After running you'll find a directory added under [./regression_results/](./regr
 
 **Note**: if runtime is `-1`, that means the design failed. Any reported statistics from any run after the failure of the design is reported as `-1` as well.
 
+Now you can skip forward to [running openlane](#running-openlane).
+
 ## Installation Notes:
 
 - The Makefile should do the following when you run the above command:
     - Clone Skywater-pdk and the specified STD_CELL_LIBRARY, SPECIAL_VOLTAGE_LIBRARY, and IO_LIBRARY and build it.
     - Clone open_pdks and set up the pdk for OpenLANE use.
-    - Build the OpenLANE docker.
+    - Build the OpenLANE docker container.
     - Test the whole setup with a complete run on a small design `spm`.
 
-- You can use dockerhub instead of building the docker locally. Check [this section](#pulling-an-auto-built-docker-image-from-dockerhub) for more details.
+- You can use dockerhub instead of building the docker container locally. Check [this section](#pulling-an-auto-built-docker-image-from-dockerhub) for more details.
 
 - the default STD_CELL_LIBRARY is sky130_fd_sc_hd. You can change that by running:
 ```bash
@@ -112,12 +115,12 @@ If you already have the repo locally, then no need to re-clone it. You can direc
     make test # This is to test that the flow and the pdk were properly installed
 ```
 
-This should install the latest openlane docker, and re-install the pdk for the latest used version. If you want to only update the openlane docker check this [section](#building-the-openlane-docker) after updating the repo.
+This should install the latest openlane docker container, and re-install the pdk for the latest used version. If you want to only update the openlane docker container check this [section](#building-the-openlane-docker-container) after updating the repo.
 
 
 # Setting up OpenLANE
 
-## Building the OpenLANE Docker
+## Building the OpenLANE Docker Container
 
 **DISCLAIMER: This sub-section is to give you an understanding of what happens under the hood in the Makefile. You don't need to run the instructions here, if you already ran `make openlane`**
 
@@ -132,6 +135,8 @@ To setup openlane you can build the docker container locally following these ins
     cd ..
 ```
 
+The generated IMAGE_NAME is openlane:rc7
+
 ### Pulling an Auto-Built Docker Image from Dockerhub
 
 Alternatively, you can use the auto-built openlane docker images available through [dockerhub](https://hub.docker.com/r/efabless/openlane/tags).
@@ -143,26 +148,46 @@ Alternatively, you can use the auto-built openlane docker images available throu
     docker pull efabless/openlane:rc7
 ```
 
+The generated IMAGE_NAME is efabless/openlane:rc7
+
 ## Running OpenLANE
 
-### Running the Locally Built Docker Image
+### Starting The Docker Container
 
-Issue the following command to open the docker container from /path/to/openlane to ensure that the output files persist after exiting the container:
+You have one of two options:
+
+
+The easiest way to mount the proper directories into the docker container would be to rely on the Makefile:
 
 ```bash
-    docker run -it -v $(pwd):/openLANE_flow -v $PDK_ROOT:$PDK_ROOT -e PDK_ROOT=$PDK_ROOT -u $(id -u $USER):$(id -g $USER) openlane:rc7
+    make mount
 ```
 
-### Running the Pulled Auto-Built Docker Image
-If you pulled the docker image from dockerhub instead of building it locally, then run the following command:
+* **Note:**
+    - Default PDK_ROOT is `$(pwd)/pdks`. If you have installed the PDK at a different location, run the following before `make mount`:
+        ```bash
+        export PDK_ROOT=<absolute path to where skywater-pdk, open_pdks, and sky130A reside>
+        ```
+    - Default IMAGE_NAME is openlane:rc7. If you want to use a different version, run the following before `make mount`:
+        ```bash
+        export IMAGE_NAME=<docker image name>
+        ```
+    - If you're using Dockerhub, then run the follwing before `make mount`:
+        ```bash
+        export IMAGE_NAME=efabless/openlane:rc7
+        ```
+
+The following is roughly what happens under the hood when you run `make mount` + the required exports:
 
 ```bash
-    export IMAGE_NAME=efabless/openlane:rc7
+    export PDK_ROOT=<absolute path to where skywater-pdk and open_pdks will reside>
+    export IMAGE_NAME=<docker image name>
     docker run -it -v $(pwd):/openLANE_flow -v $PDK_ROOT:$PDK_ROOT -e PDK_ROOT=$PDK_ROOT -u $(id -u $USER):$(id -g $USER) $IMAGE_NAME
 ```
 
-**Note: this will mount the openlane directory inside the container.**
+**Note: this will mount the openlane directory and the pdk root inside the container.**
 
+### Running inside the Docker Container
 
 Use the following example to check the overall setup:
 
@@ -358,16 +383,19 @@ OpenLANE flow consists of several stages. By default all flow steps are run in s
     4. `OpenDP` - Perfroms detailed placement to legalize the globally placed components
 4. **CTS**
     1. `TritonCTS` - Synthesizes the clock distribution network (the clock tree)
-5. **Routing** *
+5. **Routing**
     1. `FastRoute` - Performs global routing to generate a guide file for the detailed router
-    2. `TritonRoute` - Performs detailed routing
-    3. `SPEF-Extractor` - Performs SPEF extraction
+    2. `CU-GR` - Another option for performing global routing.
+    3. `TritonRoute` - Performs detailed routing
+    4. `SPEF-Extractor` - Performs SPEF extraction
 6. **GDSII Generation**
     1. `Magic` - Streams out the final GDSII layout file from the routed def
+    2. `Klayout` - Streams out the final GDSII layout file from the routed def as a back-up
 7. **Checks**
     1. `Magic` - Performs DRC Checks & Antenna Checks
-    2. `Netgen` - Performs LVS Checks
-    3. `CVC` - Performs Circuit Validity Checks
+    2. `Klayout` - Performs DRC Checks
+    3. `Netgen` - Performs LVS Checks
+    4. `CVC` - Performs Circuit Validity Checks
 
 OpenLANE integrated several key open source tools over the execution stages:
 - RTL Synthesis, Technology Mapping, and Formal Verification : [yosys + abc][4]
@@ -376,10 +404,10 @@ OpenLANE integrated several key open source tools over the execution stages:
 - Placement: [RePLace][9] (Global), [Resizer][15] and [OpenPhySyn][28] (Optimizations), and [OpenDP][10] (Detailed)
 - Clock Tree Synthesis: [TritonCTS][11]
 - Fill Insertion: [OpenDP/filler_placement][10]
-- Routing: [FastRoute][12] (Global) and [TritonRoute][13] (Detailed)
+- Routing: [FastRoute][12] or [CU-GR][36] (Global) and [TritonRoute][13] (Detailed)
 - SPEF Extraction: [SPEF-Extractor][27]
-- GDSII Streaming out: [Magic][14]
-- DRC Checks: [Magic][14]
+- GDSII Streaming out: [Magic][14] and [Klayout][35]
+- DRC Checks: [Magic][14] and [Klayout][35]
 - LVS check: [Netgen][22]
 - Antenna Checks: [Magic][14]
 - Circuit Validity Checker: [CVC][31]
@@ -398,6 +426,7 @@ designs/<design_name>
 │   │   │   ├── cts
 │   │   │   ├── cvc
 │   │   │   ├── floorplan
+│   │   │   ├── klayout
 │   │   │   ├── magic
 │   │   │   ├── placement
 │   │   │   ├── routing
@@ -406,6 +435,7 @@ designs/<design_name>
 │   │   │   ├── cts
 │   │   │   ├── cvc
 │   │   │   ├── floorplan
+│   │   │   ├── klayout
 │   │   │   ├── magic
 │   │   │   ├── placement
 │   │   │   ├── routing
@@ -414,6 +444,7 @@ designs/<design_name>
 │   │   │   ├── cts
 │   │   │   ├── cvc
 │   │   │   ├── floorplan
+│   │   │   ├── klayout
 │   │   │   ├── magic
 │   │   │   ├── placement
 │   │   │   ├── routing
@@ -422,6 +453,7 @@ designs/<design_name>
 │   │       ├── cts
 │   │       ├── cvc
 │   │       ├── floorplan
+│   │       ├── klayout
 │   │       ├── magic
 │   │       ├── placement
 │   │       ├── routing
@@ -429,11 +461,11 @@ designs/<design_name>
 ```
 
 To delete all generated runs under all designs:
-- inside the docker:
+- inside the docker container:
     ```bash
         ./clean_runs.tcl
     ```
-- outside the docker:
+- outside the docker container:
     ```bash
         make clean_runs
     ```
@@ -547,3 +579,5 @@ To check the original author list of OpenLANE, check [this][33].
 [32]: ./CONTRIBUTING.md
 [33]: ./AUTHORS.md
 [34]: ./docs/source/OpenLANE_commands.md
+[35]: https://github.com/KLayout/klayout
+[36]: https://github.com/cuhk-eda/cu-gr

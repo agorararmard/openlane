@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 echo "Running the standard installation process..."
-mkdir pdks
 export PDK_ROOT=$(pwd)/pdks
 export RUN_ROOT=$(pwd)
 export IMAGE_NAME=openlane:rc7
@@ -51,6 +50,8 @@ rm -rf open_pdks
 git clone https://github.com/RTimothyEdwards/open_pdks.git open_pdks
 cd $RUN_ROOT
 make build-pdk
+make gen-sources
 echo "done installing"
+cat $PDK_ROOT/sky130A/SOURCES
 cd $RUN_ROOT
 exit 0

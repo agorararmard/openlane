@@ -27,6 +27,14 @@ proc handle_deprecated_config {old new} {
   }
 }
 
+proc find_all {ext} {
+    if { ! [info exists ::env(RUN_DIR)] } {
+        puts_err "You are not currently running a design. Perhaps you forgot to run 'prep'?"
+        return -code error
+    }
+    return [exec find $::env(RUN_DIR) -name "*.$ext" | sort | xargs realpath --relative-to=$::env(PWD)]
+}
+
 proc handle_deprecated_command {new} {
   set invocation [info level -1]
   set caller [lindex $invocation 0]
@@ -163,8 +171,8 @@ proc try_catch {args} {
             puts $error_log_file "Last 10 lines:\n[exec tail -10 << $error_msg]\n"
             close $error_log_file
         }
-
-        return -code error
+		flow_fail
+		return -code error
     }
 }
 
@@ -175,6 +183,33 @@ proc make_array {pesudo_dict prefix} {
 		set returned_array($key) ${prefix}${value}
 	}
 	return [array get returned_array]
+}
+
+proc index_file {args} {
+	set file_full_name [lindex $args 0]
+	set index_increment 1; # Default increment is 1
+	if { [llength $args] == 2} {
+		set index_increment [lindex $args 1]
+	}
+	set ::env(CURRENT_INDEX) [expr $index_increment + $::env(CURRENT_INDEX)]
+	if { $index_increment } {
+		puts_info "current step index: $::env(CURRENT_INDEX)"
+	}
+	set file_path [file dirname $file_full_name]
+	set fbasename [file tail $file_full_name]
+	set fbasename "$::env(CURRENT_INDEX)-$fbasename"
+	set new_file_full_name "$file_path/$fbasename"
+    set replace [string map {/ \\/} $::env(CURRENT_INDEX)]
+    exec sed -i -e "s/\\(set ::env(CURRENT_INDEX)\\).*/\\1 $replace/" "$::env(GLB_CFG_FILE)"
+	return $new_file_full_name
+}
+
+proc flow_fail {args} {
+	if { ! [info exists ::env(FLOW_FAILED)] || ! $::env(FLOW_FAILED) } {
+		set ::env(FLOW_FAILED) 1
+		generate_final_summary_report
+		puts_err "Flow Failed."
+	}
 }
 
 # Value	Color
@@ -213,20 +248,21 @@ proc puts_info {txt} {
 }
 
 proc generate_final_summary_report {args} {
-    puts_info "Generating Final Summary Report..."
-	set options {
-        {-output optional}
-		{-man_report optional}
-    }
-    set flags {}
-    parse_key_args "generate_final_summary_report" args arg_values $options flags_map $flags
-    
-    set_if_unset arg_values(-output) $::env(REPORTS_DIR)/final_summary_report.csv
-    set_if_unset arg_values(-man_report) $::env(REPORTS_DIR)/manufacturability_report.rpt
-
     if { $::env(GENERATE_FINAL_SUMMARY_REPORT) == 1 } {
+		puts_info "Generating Final Summary Report..."
+		set options {
+			{-output optional}
+			{-man_report optional}
+		}
+		set flags {}
+		parse_key_args "generate_final_summary_report" args arg_values $options flags_map $flags
+		
+		set_if_unset arg_values(-output) $::env(REPORTS_DIR)/final_summary_report.csv
+		set_if_unset arg_values(-man_report) $::env(REPORTS_DIR)/manufacturability_report.rpt
+
         try_catch python3 $::env(OPENLANE_ROOT)/report_generation_wrapper.py -d $::env(DESIGN_DIR) -dn $::env(DESIGN_NAME) -t $::env(RUN_TAG) -o $arg_values(-output) -m $arg_values(-man_report) -r $::env(RUN_DIR)
         puts_info [read [open $arg_values(-man_report) r]]
+		puts_info "check full report here: $arg_values(-output)"
     }
 }
 

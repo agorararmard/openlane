@@ -19,6 +19,7 @@ set ::env(USE_GPIO_PADS) 0
 
 # Flow control defaults
 set ::env(LEC_ENABLE) 0
+set ::env(YOSYS_REWRITE_VERILOG) 0
 set ::env(RUN_MAGIC) 1
 set ::env(MAGIC_PAD) 0
 set ::env(MAGIC_ZEROIZE_ORIGIN) 1
@@ -34,6 +35,10 @@ set ::env(MAGIC_CONVERT_DRC_TO_RDB) 1
 set ::env(RUN_ROUTING_DETAILED) 1
 set ::env(RUN_SIMPLE_CTS) 0
 set ::env(CLOCK_PERIOD) "10"
+set ::env(RUN_KLAYOUT) 1
+set ::env(TAKE_GDS_SCROT) 1
+set ::env(RUN_KLAYOUT_DRC) 1
+set ::env(KLAYOUT_DRC_KLAYOUT_GDS) 0
 
 set ::env(USE_ARC_ANTENNA_CHECK) 1
 

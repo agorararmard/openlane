@@ -14,6 +14,8 @@
 
 OPENLANE_DIR ?= $(shell pwd)
 
+PDK_ROOT ?= $(shell pwd)/pdks
+
 ifeq (, $(strip $(NPROC)))
   # Linux (utility program)
   NPROC := $(shell nproc 2>/dev/null)
@@ -45,7 +47,7 @@ REGRESSION_TAG ?= TEST_SW_HD
 PRINT_REM_DESIGNS_TIME ?= 0
 
 SKYWATER_COMMIT ?= 3d7617a1acb92ea883539bcf22a632d6361a5de4
-OPEN_PDKS_COMMIT ?= debc0a49b00d93416e0efd82f26f7604ae1e7a3a
+OPEN_PDKS_COMMIT ?= e6d41beb5d20c169c71bbbe33d8ff53619257ed5
 
 ifndef PDK_ROOT
 $(error PDK_ROOT is undefined, please export it before running make)
@@ -57,24 +59,27 @@ endif
 all: openlane pdk
 
 .PHONY: pdk
-pdk: skywater-pdk skywater-library open_pdks build-pdk
+pdk: skywater-pdk skywater-library open_pdks build-pdk gen-sources
 
 .PHONY: native-pdk
-native-pdk: skywater-pdk skywater-library open_pdks native-build-pdk
+native-pdk: skywater-pdk skywater-library open_pdks native-build-pdk gen-sources
 
 .PHONY: full-pdk
-full-pdk: skywater-pdk all-skywater-libraries open_pdks build-pdk
+full-pdk: skywater-pdk all-skywater-libraries open_pdks build-pdk gen-sources
 
 .PHONY: native-full-pdk
-native-full-pdk: skywater-pdk all-skywater-libraries open_pdks native-build-pdk
+native-full-pdk: skywater-pdk all-skywater-libraries open_pdks native-build-pdk gen-sources
+
+$(PDK_ROOT)/:
+	mkdir -p $(PDK_ROOT)
 
 $(PDK_ROOT)/skywater-pdk:
 	git clone https://github.com/google/skywater-pdk.git $(PDK_ROOT)/skywater-pdk
 
 .PHONY: skywater-pdk
-skywater-pdk: $(PDK_ROOT)/skywater-pdk
+skywater-pdk: $(PDK_ROOT)/ $(PDK_ROOT)/skywater-pdk
 	cd $(PDK_ROOT)/skywater-pdk && \
-		git checkout master && git pull && \
+		git checkout master && git submodule init && git pull --no-recurse-submodules && \
 		git checkout -qf $(SKYWATER_COMMIT)
 
 .PHONY: skywater-library
@@ -83,8 +88,6 @@ skywater-library: $(PDK_ROOT)/skywater-pdk
 		git submodule update --init libraries/$(STD_CELL_LIBRARY)/latest && \
 		git submodule update --init libraries/$(IO_LIBRARY)/latest && \
 		git submodule update --init libraries/$(SPECIAL_VOLTAGE_LIBRARY)/latest && \
-		rm -rf third_party/make-env && \
-		git checkout -qf third_party/make-env && \
 		$(MAKE) -j$(THREADS) timing
 
 .PHONY: all-skywater-libraries
@@ -97,8 +100,6 @@ all-skywater-libraries: skywater-pdk
 		git submodule update --init libraries/sky130_fd_sc_ls/latest && \
 		git submodule update --init libraries/sky130_fd_sc_hvl/latest && \
 		git submodule update --init libraries/sky130_fd_io/latest && \
-		rm -rf third_party/make-env && \
-		git checkout -qf third_party/make-env && \
 		$(MAKE) -j$(THREADS) timing
 
 ### OPEN_PDKS
@@ -106,7 +107,7 @@ $(PDK_ROOT)/open_pdks:
 	git clone git://opencircuitdesign.com/open_pdks $(PDK_ROOT)/open_pdks
 
 .PHONY: open_pdks
-open_pdks: $(PDK_ROOT)/open_pdks
+open_pdks: $(PDK_ROOT)/ $(PDK_ROOT)/open_pdks
 	cd $(PDK_ROOT)/open_pdks && \
 		git checkout master && git pull && \
 		git checkout -qf $(OPEN_PDKS_COMMIT)
@@ -121,11 +122,10 @@ build-pdk: $(PDK_ROOT)/open_pdks $(PDK_ROOT)/skywater-pdk
 	docker run -it -v $(OPENLANE_DIR):/openLANE_flow -v $(PDK_ROOT):$(PDK_ROOT) -e PDK_ROOT=$(PDK_ROOT) -u $(shell id -u $(USER)):$(shell id -g $(USER)) $(IMAGE_NAME) sh -c " cd $(PDK_ROOT)/open_pdks && \
 		./configure --enable-sky130-pdk=$(PDK_ROOT)/skywater-pdk/libraries --with-sky130-local-path=$(PDK_ROOT) && \
 		cd sky130 && \
-		$(MAKE) veryclean && \
-		$(MAKE) && \
-		$(MAKE) install-local && \
-		touch $(PDK_ROOT)/sky130A/SOURCES && \
-		echo 'Built by: OpenLANE rc7 Makefile\n Skywater Commit: $(SKYWATER_COMMIT)\n open_pdks Commit: $(OPEN_PDKS_COMMIT)' > $(PDK_ROOT)/sky130A/SOURCES"
+		make veryclean && \
+		make && \
+		make install-local && \
+		make clean"
 
 .PHONY: native-build-pdk
 native-build-pdk: $(PDK_ROOT)/open_pdks $(PDK_ROOT)/skywater-pdk
@@ -139,15 +139,28 @@ native-build-pdk: $(PDK_ROOT)/open_pdks $(PDK_ROOT)/skywater-pdk
 		cd sky130 && \
 		$(MAKE) veryclean && \
 		$(MAKE) && \
-		$(MAKE) install-local && \
-		touch $(PDK_ROOT)/sky130A/SOURCES && \
-		echo 'Built by: OpenLANE rc7 Makefile\n Skywater Commit: $(SKYWATER_COMMIT)\n open_pdks Commit: $(OPEN_PDKS_COMMIT)' > $(PDK_ROOT)/sky130A/SOURCES
+		$(MAKE) install-local
+
+gen-sources: $(PDK_ROOT)/sky130A
+	touch $(PDK_ROOT)/sky130A/SOURCES
+	OPENLANE_COMMIT=$(git rev-parse HEAD)
+	echo -ne "openlane " > $(PDK_ROOT)/sky130A/SOURCES
+	cd $(OPENLANE_DIR) && git rev-parse HEAD >> $(PDK_ROOT)/sky130A/SOURCES
+	echo -ne "skywater-pdk " >> $(PDK_ROOT)/sky130A/SOURCES
+	cd $(PDK_ROOT)/skywater-pdk && git rev-parse HEAD >> $(PDK_ROOT)/sky130A/SOURCES
+	echo -ne "open_pdks " >> $(PDK_ROOT)/sky130A/SOURCES
+	cd $(PDK_ROOT)/open_pdks && git rev-parse HEAD >> $(PDK_ROOT)/sky130A/SOURCES
 
 ### OPENLANE
 .PHONY: openlane
 openlane:
 	cd $(OPENLANE_DIR)/docker_build && \
 		$(MAKE) merge
+
+.PHONY: mount
+mount:
+	cd $(OPENLANE_DIR) && \
+		docker run -it -v $(OPENLANE_DIR):/openLANE_flow -v $(PDK_ROOT):$(PDK_ROOT) -e PDK_ROOT=$(PDK_ROOT) -u $(shell id -u $(USER)):$(shell id -g $(USER)) $(IMAGE_NAME)
 
 .PHONY: regression
 regression:

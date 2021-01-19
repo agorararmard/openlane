@@ -48,6 +48,13 @@ proc set_def {def} {
     exec sed -i -e "s/\\(set ::env(CURRENT_DEF)\\).*/\\1 $replace/" "$::env(GLB_CFG_FILE)"
 }
 
+proc set_guide {guide} {
+    puts_info "Changing layout from $::env(CURRENT_GUIDE) to $guide"
+    set ::env(CURRENT_GUIDE) $guide
+    set replace [string map {/ \\/} $guide]
+    exec sed -i -e "s/\\(set ::env(CURRENT_GUIDE)\\).*/\\1 $replace/" "$::env(GLB_CFG_FILE)"
+}
+
 proc prep_lefs {args} {
     puts_info "Preparing LEF Files"
     try_catch $::env(SCRIPTS_DIR)/mergeLef.py -i $::env(TECH_LEF) $::env(CELLS_LEF) -o $::env(TMP_DIR)/merged_unpadded.lef |& tee $::env(TERMINAL_OUTPUT)
@@ -369,6 +376,7 @@ proc prep {args} {
         {cts cts/cts}
         {lvs lvs/lvs}
         {cvc cvc/cvc}
+        {klayout klayout/klayout}
     }
 
     set final_output \
@@ -381,6 +389,7 @@ proc prep {args} {
         [list magic magic/$::env(DESIGN_NAME)] \
         [list lvs lvs/$::env(DESIGN_NAME).lvs] \
         [list cvc cvc/$::env(DESIGN_NAME)] \
+        [list klayout klayout/$::env(DESIGN_NAME)] 
         ]
 
     array set results_file_name [make_array $final_output $::env(RESULTS_DIR)/]
@@ -404,7 +413,7 @@ proc prep {args} {
     set util 	$::env(FP_CORE_UTIL)
     set density $::env(PL_TARGET_DENSITY)
 
-    set stages {synthesis floorplan placement cts routing magic lvs cvc}
+    set stages {synthesis floorplan placement cts routing magic lvs cvc klayout}
     foreach stage $stages {
         file mkdir\
             $::env(RESULTS_DIR)/$stage \
@@ -448,6 +457,16 @@ proc prep {args} {
         set_log ::env(CURRENT_DEF) $::env(CURRENT_DEF) $::env(GLB_CFG_FILE) 1
     }
 
+    if { ! [info exists ::env(CURRENT_GUIDE)] } {
+        set ::env(CURRENT_GUIDE) 0
+        set_log ::env(CURRENT_GUIDE) $::env(CURRENT_GUIDE) $::env(GLB_CFG_FILE) 1
+    }
+
+    if { ! [info exists ::env(CURRENT_INDEX)] } {
+        set ::env(CURRENT_INDEX) 0
+        set_log ::env(CURRENT_INDEX) $::env(CURRENT_INDEX) $::env(GLB_CFG_FILE) 1
+    }
+
     if { ! [info exists ::env(CURRENT_NETLIST)] } {
         set ::env(CURRENT_NETLIST) 0
         set_log ::env(CURRENT_NETLIST) $::env(CURRENT_NETLIST) $::env(GLB_CFG_FILE) 1
@@ -456,6 +475,13 @@ proc prep {args} {
     if { ! [info exists ::env(PREV_NETLIST)] } {
         set ::env(PREV_NETLIST) 0
         set_log ::env(PREV_NETLIST) $::env(PREV_NETLIST) $::env(GLB_CFG_FILE) 1
+    }
+
+    if { [file exists $::env(PDK_ROOT)/$::env(PDK)/SOURCES] } {
+		file copy -force $::env(PDK_ROOT)/$::env(PDK)/SOURCES $::env(RUN_DIR)/PDK_SOURCES
+	}
+    if { [info exists ::env(OPENLANE_VERSION) ] } {
+        try_catch echo "openlane $::env(OPENLANE_VERSION)" > $::env(RUN_DIR)/OPENLANE_VERSION
     }
 
     puts_info "Preparation complete"
@@ -478,8 +504,7 @@ proc padframe_gen {args} {
 
     exec $pfg_exec -nogui -tech-path=$::env(PDK_ROOT)/$::env(PDK) \
         -project-path=$pf_src_tmp -cfg \
-        |& tee $::env(TERMINAL_OUTPUT) $pf_src_tmp/pfg.log
-
+        |& tee $::env(TERMINAL_OUTPUT) [index_file $pf_src_tmp/pfg.log]
     kill_display_buffer
 }
 
@@ -493,8 +518,7 @@ proc padframe_gen_legacy {args} {
 
     exec $pfg_exec -nogui -tech-path=$::env(PDK_ROOT)/$::env(PDK) \
         -project-path=$pf_src_tmp -cfg \
-        |& tee $::env(TERMINAL_OUTPUT) $pf_src_tmp/pfg.log
-
+        |& tee $::env(TERMINAL_OUTPUT) [index_file $pf_src_tmp/pfg.log]
     kill_display_buffer
 }
 
@@ -589,17 +613,17 @@ proc heal_antenna_violators {args} {
 	if { ($::env(DIODE_INSERTION_STRATEGY) == 2) || ($::env(DIODE_INSERTION_STRATEGY) == 5) } {
 		if { $::env(USE_ARC_ANTENNA_CHECK) == 1 } {
 			#ARC specific
-			try_catch python3 $::env(SCRIPTS_DIR)/extract_antenna_violators.py -i $::env(REPORTS_DIR)/routing/antenna.rpt -o $::env(TMP_DIR)/vios.txt
+			try_catch python3 $::env(SCRIPTS_DIR)/extract_antenna_violators.py -i [index_file $::env(REPORTS_DIR)/routing/antenna.rpt 0] -o [index_file $::env(TMP_DIR)/vios.txt 0]
 		} else {
             #Magic Specific
-			set report_file [open $::env(magic_report_file_tag).antenna_violators.rpt r]
+			set report_file [open [index_file $::env(magic_report_file_tag).antenna_violators.rpt 0] r]
 			set violators [split [string trim [read $report_file]]]
 			close $report_file
 			# may need to speed this up for extremely huge files using hash tables
-			exec echo $violators >> $::env(TMP_DIR)/vios.txt
+			exec echo $violators >> [index_file $::env(TMP_DIR)/vios.txt 0]
 		}
 		#replace violating cells with real diodes
-		try_catch python3 $::env(SCRIPTS_DIR)/fakeDiodeReplace.py -v $::env(TMP_DIR)/vios.txt -d $::env(tritonRoute_result_file_tag).def -f $::env(FAKEDIODE_CELL) -t $::env(DIODE_CELL)
+		try_catch python3 $::env(SCRIPTS_DIR)/fakeDiodeReplace.py -v [index_file $::env(TMP_DIR)/vios.txt 0] -d $::env(tritonRoute_result_file_tag).def -f $::env(FAKEDIODE_CELL) -t $::env(DIODE_CELL)
 		puts_info "DONE HEALING ANTENNA VIOLATORS"
 	}
 }
@@ -659,7 +683,7 @@ proc label_macro_pins {args} {
     set options {
         {-lef required}
         {-netlist_def required}
-        {-pad_pin_name required}
+        {-pad_pin_name optional}
         {-output optional}
         {-extra_args optional}
     }
@@ -677,6 +701,7 @@ proc label_macro_pins {args} {
         set extra_args $arg_values(-extra_args)
     }
 
+    set_if_unset arg_values(-pad_pin_name) ""
 
     try_catch python3 $::env(SCRIPTS_DIR)/label_macro_pins.py\
         --lef $arg_values(-lef)\
@@ -684,7 +709,7 @@ proc label_macro_pins {args} {
         --netlist-def $arg_values(-netlist_def)\
         --pad-pin-name $arg_values(-pad_pin_name)\
         -o $output_def\
-        {*}$extra_args |& tee $::env(LOG_DIR)/label_macro_pins.log $::env(TERMINAL_OUTPUT)
+        {*}$extra_args |& tee [index_file $::env(LOG_DIR)/label_macro_pins.log] $::env(TERMINAL_OUTPUT)
 }
 
 
@@ -704,52 +729,10 @@ proc write_verilog {filename args} {
 
     set ::env(INPUT_DEF) $arg_values(-def)
 
-    try_catch openroad -exit $::env(SCRIPTS_DIR)/openroad/or_write_verilog.tcl |& tee $::env(TERMINAL_OUTPUT) $::env(LOG_DIR)/write_verilog.log
-
+    try_catch openroad -exit $::env(SCRIPTS_DIR)/openroad/or_write_verilog.tcl |& tee $::env(TERMINAL_OUTPUT) [index_file $::env(LOG_DIR)/write_verilog.log]
     if { [info exists flags_map(-canonical)] } {
         yosys_rewrite_verilog $filename
     }
-}
-
-proc add_macro_obs {args} {
-    puts_info "Adding Macro Obstruction..."
-    set options {
-        {-defFile required}
-        {-lefFile required}
-        {-obstruction required}
-        {-placementX optional}
-        {-placementY optional}
-        {-sizeWidth required}
-        {-sizeHeight required}
-        {-fixed required}
-        {-dbunit optional}
-        {-layerNames required}
-    }
-    set flags {}
-    parse_key_args "add_macro_obs" args arg_values $options flags_map $flags
-
-    set px 0
-    set py 0
-    set db 1000
-
-    if {[info exists arg_values(-placementX)]} {
-        set px $arg_values(-placementX)
-    }
-
-    if {[info exists arg_values(-placementY)]} {
-        set py $arg_values(-placementY)
-    }
-
-    if {[info exists arg_values(-dbunit)]} {
-        set db $arg_values(-dbunit)
-    }
-
-    if { $arg_values(-fixed) == 1 } {
-        try_catch python3 $::env(SCRIPTS_DIR)/addObstruction.py -d $arg_values(-defFile) -l $arg_values(-lefFile) -obs $arg_values(-obstruction) -ln {*}$arg_values(-layerNames) -px $px -py $py -sw $arg_values(-sizeWidth) -sh $arg_values(-sizeHeight) -db $db -f
-    } else {
-        try_catch python3 $::env(SCRIPTS_DIR)/addObstruction.py -d $arg_values(-defFile) -l $arg_values(-lefFile) -obs $arg_values(-obstruction) -ln {*}$arg_values(-layerNames) -px $px -py $py -sw $arg_values(-sizeWidth) -sh $arg_values(-sizeHeight) -db $db
-    }
-
 }
 
 proc set_layer_tracks {args} {
@@ -769,8 +752,8 @@ proc set_layer_tracks {args} {
 
 proc run_or_antenna_check {args} {
     puts_info "Running OpenROAD Antenna Rule Checker..."
-	try_catch openroad -exit $::env(SCRIPTS_DIR)/openroad/or_antenna_check.tcl |& tee $::env(TERMINAL_OUTPUT) $::env(LOG_DIR)/routing/or_antenna.log
-
+	try_catch openroad -exit $::env(SCRIPTS_DIR)/openroad/or_antenna_check.tcl |& tee $::env(TERMINAL_OUTPUT) [index_file $::env(LOG_DIR)/routing/or_antenna.log]
+    try_catch mv -f $::env(REPORTS_DIR)/routing/antenna.rpt [index_file $::env(REPORTS_DIR)/routing/antenna.rpt]
 }
 
 proc run_antenna_check {args} {

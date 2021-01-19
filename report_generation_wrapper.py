@@ -19,6 +19,7 @@ import os
 from scripts.report.report import Report
 from scripts.config.config import ConfigHandler
 import scripts.utils.utils as utils
+from scripts.report.get_file_name import get_name
 
 parser = argparse.ArgumentParser(
     description='Creates a csv report for a given design.')
@@ -64,18 +65,21 @@ outputFileOpener.close()
 utils.addComputedStatistics(output_file)
 
 # Tracking Magic DRC, LVS, Antenna Logs:
-magic_drc_report=str(run_path)+"/logs/magic/magic.drc"
+if run_path is None:
+    run_path = utils.get_run_path(design, tag)
+magic_drc_report=get_name(str(run_path)+"/reports/magic/", "magic.drc")
 lvs_report=str(run_path)+"/results/lvs/"+design_name+".lvs_parsed.lef.log"
 if not os.path.exists(lvs_report):
     lvs_report=str(run_path)+"/results/lvs/"+design_name+".lvs_parsed.gds.log"
-magic_antenna_report=str(run_path)+"/reports/magic/magic.antenna_violators.rpt"
-arc_antenna_report=str(run_path)+"/reports/routing/antenna.rpt"
+magic_antenna_report=get_name(str(run_path)+"/reports/magic/","magic.antenna_violators.rpt")
+arc_antenna_report=get_name(str(run_path)+"/reports/routing/","antenna.rpt")
 
 printArr = []
 
 printArr.append("Design Name: " + design_name)
-printArr.append("Run Directory: " + run_path)
+printArr.append("Run Directory: " + str(run_path))
 
+splitLine = '----------------------------------------'
 
 # Summarizing Magic DRC
 drcVioDict = dict()
@@ -85,8 +89,6 @@ if os.path.exists(magic_drc_report):
     if drcFileOpener.mode == 'r':
         drcContent = drcFileOpener.read()
     drcFileOpener.close()
-
-    splitLine = '----------------------------------------'
 
     # design name
     # violation message

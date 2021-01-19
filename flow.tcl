@@ -47,6 +47,8 @@ proc run_non_interactive_mode {args} {
 
 	run_magic
 
+	run_klayout
+
 	run_magic_spice_export
 
 	if {  [info exists flags_map(-save) ] } {
@@ -67,6 +69,7 @@ proc run_non_interactive_mode {args} {
 	# Physical verification
 
 	run_magic_drc
+	run_klayout_drc
 
 	run_lvs; # requires run_magic_spice_export
 
@@ -75,6 +78,7 @@ proc run_non_interactive_mode {args} {
 	run_lef_cvc
 
 	generate_final_summary_report
+
 
 	puts_success "Flow Completed Without Fatal Errors."
 }

@@ -78,7 +78,6 @@ Most of the following commands' implementation exists in this [file][0]
 | `set_core_dims` | | Extracts the core dimensions based on the existing set environment variables. The results are set into `CORE_WIDTH` and `CORE_HEIGHT`. |
 |    | `-log_path <path>` | The path to write the logs into. |
 | `run_spef_extraction` | | Runs SPEF extraction on the `::env(CURRENT_DEF)` file followed by Static Timing Analysis using OpenSTA. The results are reported under `<run_path>/reports/synthesis/opensta_spef_*`. |
-| `run_lef_cvc` | | Runs CVC on the output spice, which is a Circuit Validity Checker. Voltage aware ERC checker for CDL netlists. The output files exist under `<run-path>/results/cvc/`. It is controlled by `::env(RUN_CVC)`.|
 | `run_antenna_check` | | Runs antenna checks based on the value of `::env(USE_ARC_ANTENNA_CHECK)` either calling `run_or_antenna_check` or `run_magic_antenna_check`. |
 | `run_or_antenna_check` | | Runs antenna checks using OpenROAD's Antenna Rule Checker on the `::env(CURRENT_DEF)`, the result is saved in `<run_path>/reports/routing/antenna.rpt`|
 ## Checker Commands
@@ -94,6 +93,11 @@ Most of the following commands' implementation exists in this [file][1]
 | `check_cts_clock_nets` | | Checks if clock tree synthesis was successful and clock nets were added. |
 | `check_replace_divergence` | | Catches replace divergence and exits the flow because global placement failed. |
 | `check_macro_placer_num_solns` | | Checks if macro placment was successful using basic placement. |
+| `quit_on_tr_drc` | | Checks for DRC violations after routing and exits the flow if any was found. Controlled by `QUIT_ON_TR_DRC`. |
+| `quit_on_magic_drc` | | Checks for DRC violations after magic DRC is executed and exits the flow if any was found. Controlled by `QUIT_ON_MAGIC_DRC`. |
+| `quit_on_lvs_error` | | Checks for LVS errors after netgen LVS is executed and exits the flow if any was found. Controlled by `QUIT_ON_LVS_ERROR`. |
+|    | `-log <file_parsed.log>` |  The parsed LVS log, generated at the end of running LVS. The reason why this is passed over is because there are two types of LVS and each produces a different report, and this might be expanded later. |
+
 
 
 ## Synthesis/Verilog Commands
@@ -227,7 +231,7 @@ Most of the following commands' implementation exists in this [file][8]
 
 | Command      | Flags                   | Description                                           |
 |---------------|------------------------|-----------------------------------------|
-| `global_routing` | | Runs global routing  on the processed design using the openroad app. The resulting file is under `/<run_path>/tmp/routing/` . |
+| `global_routing` | | Runs global routing  on the processed design using either the openroad app's fastroute or cugr based on the value of `GLOBAL_ROUTER`. The resulting file is under `/<run_path>/tmp/routing/` . |
 | `detailed_routing` | | Runs detailed routing on the processed design using TritonRoute. The resulting file is under `/<run_path>/results/routing/` . |
 | `add_route_obs`| | Uses `GLB_RT_OBS` to insert obstruction for each macro in order to prevent routing for each specified layer on each macro. Check `GLB_RT_OBS` in the configurations documentation for more details.|
 | `run_routing` | | Runs diode insertion based on the strategy, followed by `global_routing`, then `ins_fill_cells`, `detailed_routing`, and finally SPEF extraction on the processed design. The resulting file is under `/<run_path>/results/routing/`. It also generates a pre_route netlist using yosys and stores the results under `/<run_path>/results/synthesis`, and it runs yosys logic verification if enabled. |
@@ -246,6 +250,19 @@ Most of the following commands' implementation exists in this [file][6]
 |    | `-output <output_file>` | The output mag file path. |
 | `run_magic_antenna_check` | | Runs spice extractions on the processed design and performs antenna checks. The resulting file is under `/<run_path>/results/magic/` and `/<run_path>/reports/magic/` . |
 
+## Klayout Commands
+
+Most of the following commands' implementation exists in this [file][17]
+
+| Command      | Flags                   | Description                                           |
+|---------------|------------------------|-----------------------------------------|
+| `run_klayout` | | Streams the back-up final GDS-II and runs Klayout DRC deck on it. This is controlled by `RUN_KLAYOUT` and `RUN_KLAYOUT_DRC`. The resulting file is under `/<run_path>/results/klayout/` . |
+| `scrot_klayout` | | Export a PNG view of a given GDS-II file. This is controlled by `TAKE_GDS_SCROT`. |
+|    | `[-gds <gds_file>]` | The input GDS file, the default is `::env(CURRENT_GDS)`. |
+| `run_klayout_drc` | | Runs Klayout DRC on a given GDS-II file. This is controlled by `RUN_KLAYOUT_DRC`. |
+|    | `[-gds <gds_file>]` | The input GDS file, the default is `::env(CURRENT_GDS)`. |
+|    | `[-stage <stage>]` | The output stage using the DRC, the default is `magic`. The `magic` part refers that the drc was run on the default GDS which is produced by magic. |
+
 ## LVS Commands
 
 Most of the following commands' implementation exists in this [file][5]
@@ -254,6 +271,13 @@ Most of the following commands' implementation exists in this [file][5]
 |---------------|------------------------|-----------------------------------------|
 | `run_lvs` | | Runs an lvs check between an extracted spice netlist `EXT_NETLIST` (so `run_magic_spice_export` should be run before it.) and the current verilog netlist of the processed design `CURRENT_NETLIST`. The resulting file is under `/<run_path>/results/lvs/` and `/<run_path>/reports/lvs/`. The LVS could be on the block/cell level or on the device/transistor level, this is controlled by the extraction type set by `MAGIC_EXT_USE_GDS`. If the GDS is used in extraction then the LVS will be run down to the device/transistor level, otherwise it will be run on the block/cell level which is the default behavior in OpenLANE. |
 
+## CVC Commands
+
+Most of the following commands' implementation exists in this [file][18]
+
+| Command      | Flags                   | Description                                           |
+|---------------|------------------------|-----------------------------------------|
+| `run_lef_cvc` | | Runs CVC on the output spice, which is a Circuit Validity Checker. Voltage aware ERC checker for CDL netlists. The output files exist under `<run-path>/results/cvc/`. It is controlled by `::env(RUN_CVC)`.|
 
 ## Utility Commands
 
@@ -293,7 +317,9 @@ Most of the following commands' implementation exists in these files: [deflef][1
 | `puts_warn <text>` | | Prints `[WARNING]: ` followed by the `<text>` in yellow. |
 | `puts_info <text>` | | Prints `[INFO]: ` followed by the `<text>` in cyan. |
 | `copy_gds_properties <arg_1.mag> <arg2.mag>` | | copies the GDS properties from `<arg_1.mag>` to `<arg2.mag>`. |
-
+| `index_file <file> [<increment>]` | | Adds an index prefix to the file name keeping it's path. The prefix is governed by `CURRENT_INDEX`+`increment`, and `CURRENT_INDEX` is stored/overwritten every time an increment is added. The current value of the `CURRENT_INDEX` could be found in `<run_path>/config.tcl`. The default increment is `1`. |
+| `flow_fail` | | Calls `generate_final_summary_report` and prints `Flow Failed`. |
+| `find_all <ext>` | | Print a sorted list of *.ext files that are found in the current run directory. |
 
 
 [0]: ./../../scripts/tcl_commands/all.tcl
@@ -313,3 +339,5 @@ Most of the following commands' implementation exists in these files: [deflef][1
 [14]: https://github.com/efabless/openlane/blob/master/designs/spm/pin_order.cfg
 [15]: ./chip_integration.md
 [16]: ./advanced_power_grid_control.md
+[17]: ./../../scripts/tcl_commands/klayout.tcl
+[18]: ./../../scripts/tcl_commands/cvc.tcl
