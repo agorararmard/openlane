@@ -57,8 +57,12 @@ RUN pip install --no-cache-dir \
 		install \
 		XlsxWriter
 
-# for magic
-RUN yum install -y mesa-libGLU-devel
+# for magic & openroad
+RUN yum install -y \
+	mesa-libGLU-devel \
+	qt5-qtbase-devel && \
+	yum clean all && \
+	rm -rf /var/cache/yum
 
 ENV OPENLANE_ROOT=/openLANE_flow
 ENV OPENROAD=/build/
