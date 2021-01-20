@@ -20,6 +20,7 @@ RUN yum group install -y "Development Tools" \
     && yum install -y https://repo.ius.io/ius-release-el7.rpm \
     && yum install -y centos-release-scl \
     && yum install -y wget devtoolset-8 \
+    && yum install -y qt5-qtbase-devel \
     devtoolset-8-libatomic-devel tcl-devel tcl tk libstdc++ tk-devel pcre-devel \
     python36u python36u-libs python36u-devel python36u-pip && \
     yum clean -y all && \
@@ -133,6 +134,9 @@ RUN git apply ignore_obs_outside.patch
 
 COPY opendp-diamond-search.patch /OpenROAD_10012020/
 RUN git apply opendp-diamond-search.patch
+
+COPY tritoncts.patch /OpenROAD_10012020/
+RUN git apply tritoncts.patch
 
 # Build OpenROAD
 RUN mkdir build && mkdir -p /build/version && mkdir install
