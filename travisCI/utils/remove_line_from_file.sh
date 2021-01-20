@@ -1,5 +1,6 @@
-#!/bin/sh
-# Copyright 2020 Efabless Corporation
+
+#!/bin/bash
+# SPDX-FileCopyrightText: 2020 Efabless Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,20 +13,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
 
+# Abort on Error
 set -e
 
-: ${1?"Usage: $0 tech_file input"}
-: ${2?"Usage: $0 tech_file input"}
+export file=$1
+export identifying_line=$2
 
-echo "Using Techfile: $1"
-echo "Using layout file: $2"
-
-# The -a here is necessary to handle race conditions.
-# This limits the max number of possible jobs to 100.
-xvfb-run -a klayout -z \
-    -rd input_layout=$2 \
-    -rd tech_file=$1 \
-    -rm $(dirname $0)/scrotLayout.py
-
-exit 0
+sed -i "/$identifying_line/d" $file

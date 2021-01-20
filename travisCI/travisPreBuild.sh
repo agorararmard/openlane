@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Copyright 2020 Efabless Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,21 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-: ${1?"Usage: $0 file1.gds file2.gds <top_level_module_name> output.gds"}
-: ${2?"Usage: $0 file1.gds file2.gds <top_level_module_name> output.gds"}
-: ${3?"Usage: $0 file1.gds file2.gds <top_level_module_name> output.gds"}
-: ${4?"Usage: $0 file1.gds file2.gds <top_level_module_name> output.gds"}
-
-
-echo "First Layout: $1"
-echo "Second Layout: $2"
-echo "Design Name: $3"
-echo "Output GDS will be: $4"
-
-xvfb-run -a klayout -r $(dirname $0)/xor.drc \
-    -rd top_cell=$3 \
-    -rd a=$1 \
-    -rd b=$2 \
-    -rd thr=$(nproc) \
-    -rd ol=$4 \
-    -zz
+echo "Running the tool prebuild step installation process..."
+export RUN_ROOT=$(pwd)
+echo "Modifying Docker for $TOOL"
+bash $RUN_ROOT/travisCI/utils/remove_line_from_file.sh $RUN_ROOT/docker_build/docker/$TOOL/Dockerfile  "RUN git checkout"
+cd $RUN_ROOT/docker_build
+echo "Re-building $TOOL"
+make build-$TOOL
+echo "done pre-build"
+cd $RUN_ROOT
+exit 0

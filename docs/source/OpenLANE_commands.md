@@ -232,9 +232,13 @@ Most of the following commands' implementation exists in this [file][8]
 | Command      | Flags                   | Description                                           |
 |---------------|------------------------|-----------------------------------------|
 | `global_routing` | | Runs global routing  on the processed design using either the openroad app's fastroute or cugr based on the value of `GLOBAL_ROUTER`. The resulting file is under `/<run_path>/tmp/routing/` . |
-| `detailed_routing` | | Runs detailed routing on the processed design using TritonRoute. The resulting file is under `/<run_path>/results/routing/` . |
+| `global_routing_fastroute` | | Runs global routing  on the processed design using the openroad app's fastroute. The resulting file is under `/<run_path>/tmp/routing/` . |
+| `global_routing_cugr` | | Runs global routing  on the processed design using cugr. The resulting file is under `/<run_path>/tmp/routing/` . |
+| `detailed_routing` | | Runs detailed routing on the processed design using TritonRoute (standalone), TritonRoute (OpenROAD), or DRCU based onthe value of `DETAILED_ROUTER`. The resulting file is under `/<run_path>/results/routing/` . |
+| `detailed_routing_tritonroute` | | Runs detailed routing on the processed design using TritonRoute: standalone or OpenROAD based on the value of `DETAILED_ROUTER`. The resulting file is under `/<run_path>/results/routing/` . |
+| `detailed_routing_drcu` | | Runs detailed routing on the processed design using DRCU. The resulting file is under `/<run_path>/results/routing/` . |
 | `add_route_obs`| | Uses `GLB_RT_OBS` to insert obstruction for each macro in order to prevent routing for each specified layer on each macro. Check `GLB_RT_OBS` in the configurations documentation for more details.|
-| `run_routing` | | Runs diode insertion based on the strategy, followed by `global_routing`, then `ins_fill_cells`, `detailed_routing`, and finally SPEF extraction on the processed design. The resulting file is under `/<run_path>/results/routing/`. It also generates a pre_route netlist using yosys and stores the results under `/<run_path>/results/synthesis`, and it runs yosys logic verification if enabled. |
+| `run_routing` | | Runs diode insertion based on the strategy, then adds the routing obstructions, followed by `global_routing`, then `ins_fill_cells`, `detailed_routing`, and finally SPEF extraction on the processed design. The resulting file is under `/<run_path>/results/routing/`. It also generates a pre_route netlist using yosys and stores the results under `/<run_path>/results/synthesis`, and it runs yosys logic verification if enabled. |
 
 ## Magic Commands
 
@@ -242,8 +246,8 @@ Most of the following commands' implementation exists in this [file][6]
 
 | Command      | Flags                   | Description                                           |
 |---------------|------------------------|-----------------------------------------|
-| `run_magic` | | Streams the final GDS and a mag view. The resulting file is under `/<run_path>/results/magic/` . |
-| `run_magic_drc` | | Runs a drc check on the `CURRENT_DEF`. The resulting file is under `/<run_path>/logs/magic/magic.drc` . |
+| `run_magic` | | Streams the final GDS and a mag view + a PNG screenshot of the layout. This is controlled by `RUN_MAGIC` and `TAKE_LAYOUT_SCROT`. The resulting file is under `/<run_path>/results/magic/` . |
+| `run_magic_drc` | | Runs a drc check on the `CURRENT_DEF` or the `CURRENT_GDS` based on the value of `MAGIC_DRC_USE_GDS`. The resulting file is under `/<run_path>/logs/magic/magic.drc` . |
 | `run_magic_spice_export` | | Runs spice extractions on the processed design. Based on the value of `MAGIC_EXT_USE_GDS` either the GDS or the DEF/LEF is used for the extraction. The resulting file is under `/<run_path>/results/magic/` . |
 | `export_magic_view` | | Export a mag view of a given def file. |
 |    | `-def <def_file>` | The input DEF file. |
@@ -256,12 +260,16 @@ Most of the following commands' implementation exists in this [file][17]
 
 | Command      | Flags                   | Description                                           |
 |---------------|------------------------|-----------------------------------------|
-| `run_klayout` | | Streams the back-up final GDS-II and runs Klayout DRC deck on it. This is controlled by `RUN_KLAYOUT` and `RUN_KLAYOUT_DRC`. The resulting file is under `/<run_path>/results/klayout/` . |
-| `scrot_klayout` | | Export a PNG view of a given GDS-II file. This is controlled by `TAKE_GDS_SCROT`. |
-|    | `[-gds <gds_file>]` | The input GDS file, the default is `::env(CURRENT_GDS)`. |
+| `run_klayout` | | Streams the back-up final GDS-II, generates a PNG screenshot, then runs Klayout DRC deck on it. This is controlled by `RUN_KLAYOUT`, `TAKE_LAYOUT_SCROT` ,and `KLAYOUT_DRC_KLAYOUT_GDS`. The resulting file is under `/<run_path>/results/klayout/` . |
+| `scrot_klayout` | | Export a PNG view of a given GDS-II or DEF file. This is controlled by `TAKE_LAYOUT_SCROT`. |
+|    | `[-layout <layout_file>]` | The input GDS or DEF file, the default is `::env(CURRENT_GDS)`. |
 | `run_klayout_drc` | | Runs Klayout DRC on a given GDS-II file. This is controlled by `RUN_KLAYOUT_DRC`. |
 |    | `[-gds <gds_file>]` | The input GDS file, the default is `::env(CURRENT_GDS)`. |
-|    | `[-stage <stage>]` | The output stage using the DRC, the default is `magic`. The `magic` part refers that the drc was run on the default GDS which is produced by magic. |
+|    | `[-stage <stage>]` | The output stage using the DRC, the default is `magic`. The `magic` implies that the drc was run on the default GDS which is produced by magic. |
+| `run_klayout_gds_xor` | | Runs Klayout XOR on 2 GDS-IIs. This is controlled by `RUN_KLAYOUT_XOR`. |
+|    | `[-layout1 <gds_file>]` | The input GDS file, the default is the magic generated GDS-II under `<run_path>/results/magic/<design_name>.gds`. |
+|    | `[-layout2 <gds_file>]` | The input GDS file, the default is the klayout generated GDS-II under `<run_path>/results/klayout/<design_name>.gds`. |
+|    | `[-output <gds_file>]` | The output GDS file with the xor result, the default under `<run_path>/results/klayout/<design_name>.xor.gds`. |
 
 ## LVS Commands
 
@@ -285,8 +293,10 @@ Most of the following commands' implementation exists in these files: [deflef][1
 
 | Command      | Flags                   | Description                                           |
 |---------------|------------------------|-----------------------------------------|
-| `generate_final_summary_report` | | Generates a final summary csv report of the most important statistics and configurations in the run as well as a manufacturability report with the sumamry of DRC, LVS, and Antenna violations. This command is controlled by the flag `$::env(GENERATE_FINAL_SUMMARY_REPORT)`. |
-|    | `[-output_file <output_file_path>]` | The ouput file path. <br> Defaults to being generated under `<run_path>/reports/`. |
+| `generate_final_summary_report` | | Generates a final summary csv report of the most important statistics and configurations in the run as well as a manufacturability report with the sumamry of DRC, LVS, and Antenna violations along with a new report `runtime_summary_report.rpt` which includes the runtime summary of each major step of the flow. This command is controlled by the flag `$::env(GENERATE_FINAL_SUMMARY_REPORT)`. |
+|    | `[-output_file <output_file>]` | The ouput final summary csv report file path. <br> Defaults to being generated under `<run_path>/reports/final_summary_report.csv`. |
+|    | `[-man_report <man_report>]` | The ouput manufacturability report file path. <br> Defaults to being generated under `<run_path>/reports/manufacturability_report.rpt`. |
+|    | `[-runtime_summary_<runtime_summary>]` | The ouput runtime summary report file path. <br> Defaults to being generated under `<run_path>/reports/runtime_summary_report.rpt`. |
 | `remove_pins` | | Removes the pins' section from a given DEF file. |
 |    | `-input <def_file>` | The input DEF file. |
 | `remove_empty_nets` | | Removes the empty nets from a given DEF file. |
@@ -318,7 +328,10 @@ Most of the following commands' implementation exists in these files: [deflef][1
 | `puts_info <text>` | | Prints `[INFO]: ` followed by the `<text>` in cyan. |
 | `copy_gds_properties <arg_1.mag> <arg2.mag>` | | copies the GDS properties from `<arg_1.mag>` to `<arg2.mag>`. |
 | `index_file <file> [<increment>]` | | Adds an index prefix to the file name keeping it's path. The prefix is governed by `CURRENT_INDEX`+`increment`, and `CURRENT_INDEX` is stored/overwritten every time an increment is added. The current value of the `CURRENT_INDEX` could be found in `<run_path>/config.tcl`. The default increment is `1`. |
-| `flow_fail` | | Calls `generate_final_summary_report` and prints `Flow Failed`. |
+| `calc_total_runtime` | | Creates a `<-report>` file with `<-status>` for the design followed by the total runtime from the beginning of the flow. |
+|    | `[-report <report_file>]` | The ouput total runtime file path. <br> Defaults to being generated under `<run_path>/reports/total_runtime.txt`. |
+|    | `[-status <status>]` | The status message printed in the file. <br> Defaults to `Flow completed`. |
+| `flow_fail` | | Calls `generate_final_summary_report`, calls `calc_total_runtime` with status `Flow failed`, and finally prints `Flow Failed` to the terminal. |
 | `find_all <ext>` | | Print a sorted list of *.ext files that are found in the current run directory. |
 
 
