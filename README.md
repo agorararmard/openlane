@@ -29,6 +29,7 @@ This documentation is also available at ReadTheDocs [here](https://openlane.read
 - [Hardening Macros](#hardening-macros)
 - [Chip Integration](#chip-integration)
 - [Commands and Configurations](#commands-and-configurations)
+- [Flow Generated Files](#flow-generated-files)
 - [How To Contribute](#how-to-contribute)
 - [Authors](#authors)
 
@@ -539,6 +540,12 @@ To learn more about Chip Integration. Check this [file][26]
 To get a full list of the openlane commands, first introduce yourself to the interactive mode of openlane [here][25]. Then check the full documentation of the OpenLANE commands [here][34].
 
 The full documentation of OpenLANE run configurations could be found [here][2].
+
+# Flow Generated Files
+
+To get a full list of the openlane generated files check the documentation for [fantastic files and where to find them][37].
+
+
 # How To Contribute
 
 We discuss the details of how to contribute to OpenLANE in [this documentation][32].
@@ -581,3 +588,4 @@ To check the original author list of OpenLANE, check [this][33].
 [34]: ./docs/source/OpenLANE_commands.md
 [35]: https://github.com/KLayout/klayout
 [36]: https://github.com/cuhk-eda/cu-gr
+[37]: ./docs/source/fantastic_files.md
