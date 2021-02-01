@@ -14,9 +14,12 @@ jobs:
   createPullRequest:
     runs-on: ubuntu-latest
     steps:
-            - name: Create a new Pull Request
-              uses: poad/github-pull-requester@v1
-              with:
-                      base_branch: develop # If omitted, it is equivalent to specifying main.
-                      github_token: ${{ secrets.GITHUB_TOKEN }}
-
+      - uses: actions/checkout@v2
+      - name: Run the Action
+        uses: devops-infra/action-pull-request@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          target_branch: develop
+          title: Automatated Pull Request
+          body: "**Automated pull request**"
+          label: auto-pr
