@@ -9,18 +9,16 @@ on:
 
 
 # This is a basic workflow that is manually triggered
-
 jobs:
-  createPullRequest:
+  create-pr-on-push:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@1.0.0
-      - name: Run the Action
-        uses: devops-infra/action-pull-request@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          target_branch: develop
-          source_branch: $GITHUB_REF
-          title: Automatated Pull Request
-          body: "**Automated pull request**"
-          label: auto-pr
+    - uses: actions/checkout@1.0.0
+    
+    - name: Create pull request
+      uses: thomaseizinger/create-pull-request@master
+      with:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        head: ${{ github.ref }}
+        base: develop
+        title: "An automatically created PR!"
