@@ -14,9 +14,8 @@ jobs:
   createPullRequest:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
       - name: Run the Action
-        uses: devops-infra/action-pull-request@master
+        uses: devops-infra/action-pull-request@0.1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           target_branch: develop
