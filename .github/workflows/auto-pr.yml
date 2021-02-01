@@ -21,4 +21,4 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         head: ${{ github.ref }}
         base: develop
-        title: "An automatically created PR!"
+        title: "An automatically created PR from ${{ github.ref }}"
