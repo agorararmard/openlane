@@ -16,6 +16,7 @@ OPENLANE_DIR ?= $(shell pwd)
 
 PDK_ROOT ?= $(shell pwd)/pdks
 
+
 ifeq (, $(strip $(NPROC)))
   # Linux (utility program)
   NPROC := $(shell nproc 2>/dev/null)
