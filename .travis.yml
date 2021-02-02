@@ -122,7 +122,7 @@ jobs:
     env: TEST_SET=aes128
   - name: Push to Github
     stage: github-deploy
-    if: type IN (cron, api) AND branch =~ /^(?i:CID-latest)-.*$/ AND branch != master AND NOT commit_message =~ /^[skip-deploy-stage].*$/ 
+    if: type IN (cron, api) AND branch =~ /^(?i:CID-latest)-.*$/ AND branch != staging AND NOT commit_message =~ /^[skip-deploy-stage].*$/ 
     install:
       - if [[ $TRAVIS_BRANCH == CID-latest-tools-* ]]; then
           bash .travisCI/travisUpdateTool.sh; 1
@@ -142,7 +142,7 @@ jobs:
         - bash .travisCI/travisGitPush.sh;
   - name: Create Soft Github Tag
     stage: github-deploy
-    if: type IN (cron, api) AND branch = master
+    if: type IN (cron, api) AND branch = staging
     before_install: skip
     install: skip
     script:
@@ -163,7 +163,7 @@ before_install:
         export COMMIT_SHA_5=$(echo "$TRAVIS_PULL_REQUEST_SHA" | awk '{print substr($0,0,5)}');
         export IMAGE_NAME=efabless/openlane:$TRAVIS_BRANCH-pull_request-$TRAVIS_PULL_REQUEST-$COMMIT_SHA_5;
     else
-        if [[ $TRAVIS_BRANCH == master ]]; then
+        if [[ $TRAVIS_BRANCH == staging ]]; then
           export IMAGE_NAME=efabless/openlane:latest;
         else
           export IMAGE_NAME=efabless/openlane:$TRAVIS_BRANCH;
