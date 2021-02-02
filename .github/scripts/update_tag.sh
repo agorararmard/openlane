@@ -20,11 +20,13 @@ set -e
 
 old_tag=$(grep 'IMAGE_NAME ?= efabless/openlane:' Makefile | sed 's/IMAGE_NAME ?= efabless\/openlane://g')
 git fetch --prune --unshallow
-new_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
+new_tag=$(git tag --list 'v*.*' | tail -1)
 
-echo $old_tag
-echo $new_tag
-for f in Makefile README.md docker_build/Makefile
-do
- sed -i "s/${old_tag}/${new_tag}/" $f;
-done
+if [[ $new_tag ]]; then
+    echo $old_tag
+    echo $new_tag
+    for f in Makefile README.md docker_build/Makefile
+    do
+    sed -i "s/${old_tag}/${new_tag}/" $f;
+    done
+fi
