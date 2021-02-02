@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v2
       # Runs a single command using the runners shell
       - name: Update Tag in All Files
-        run: bash .github/scripts/update_tag.sh
+        run: bash ${GITHUB_WORKSPACE}/.github/scripts/update_tag.sh
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: Auto Update Latest Git Tag Reference.
