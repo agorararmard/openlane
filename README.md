@@ -50,7 +50,7 @@ Join the community on [slack](https://invite.skywater.tools)!
 You can start setting up the skywater-pdk and openlane by running:
 
 ```bash
-    git clone https://github.com/efabless/openlane.git --branch v0.0
+    git clone https://github.com/efabless/openlane.git --branch v0.1
     cd openlane/
     # Default PDK_ROOT is $(pwd)/pdks. If you want to install the PDK at a differnt location, uncomment the next line.
     #export PDK_ROOT=<absolute path to where skywater-pdk and open_pdks will reside>
@@ -109,7 +109,7 @@ If you already have the repo locally, then no need to re-clone it. You can direc
     cd openlane/
     git checkout master
     git pull
-    git checkout v0.0
+    git checkout v0.1
     export PDK_ROOT=<absolute path to where skywater-pdk and open_pdks will reside>
     make openlane
     make pdk
@@ -128,11 +128,11 @@ This should install the latest openlane docker container, and re-install the pdk
 To setup openlane you can pull the docker container following these instructions:
 
 ```bash
-    git clone https://github.com/efabless/openlane.git --branch v0.0
-    docker pull efabless/openlane:v0.0
+    git clone https://github.com/efabless/openlane.git --branch v0.1
+    docker pull efabless/openlane:v0.1
 ```
 
-The generated IMAGE_NAME is efabless/openlane:v0.0
+The generated IMAGE_NAME is efabless/openlane:v0.1
 
 ## Running OpenLANE
 
@@ -152,7 +152,7 @@ The easiest way to mount the proper directories into the docker container would 
         ```bash
         export PDK_ROOT=<absolute path to where skywater-pdk, open_pdks, and sky130A reside>
         ```
-    - Default IMAGE_NAME is efabless/openlane:v0.0. If you want to use a different version, run the following before `make mount`:
+    - Default IMAGE_NAME is efabless/openlane:v0.1. If you want to use a different version, run the following before `make mount`:
         ```bash
         export IMAGE_NAME=<docker image name>
         ```
