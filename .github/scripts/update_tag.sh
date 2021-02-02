@@ -19,6 +19,7 @@
 set -e
 
 old_tag=$(grep 'IMAGE_NAME ?= efabless/openlane:' Makefile | sed 's/IMAGE_NAME ?= efabless\/openlane://g')
+git fetch --prune --unshallow
 new_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
 
 echo $old_tag
