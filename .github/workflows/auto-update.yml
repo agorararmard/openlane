@@ -7,20 +7,22 @@ on:
   push:
     branches: staging
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  createPullRequest:
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-      # Runs a single command using the runners shell
+
       - name: Update Tag in All Files
         run: bash ${GITHUB_WORKSPACE}/.github/scripts/update_tag.sh
-      - uses: stefanzweifel/git-auto-commit-action@v4
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
         with:
-          commit_message: Auto Update Latest Git Tag Reference.
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: Update Latest Green Tag
+          title: 'Update Latest Green Tag'
+          body: >
+            This PR is auto-generated to 
+            update the latest stable tag referenced in the documentation and the Makefile.
+          labels: automated pr
