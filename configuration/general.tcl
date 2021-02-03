@@ -19,6 +19,7 @@ set ::env(USE_GPIO_PADS) 0
 
 # Flow control defaults
 set ::env(LEC_ENABLE) 0
+set ::env(LEC_ENABLE_PRE_ROUTE) 1
 set ::env(YOSYS_REWRITE_VERILOG) 0
 
 set ::env(RUN_MAGIC) 1

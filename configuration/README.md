@@ -186,6 +186,7 @@ These variables are optional that can be specified in the design configuration f
 |---------------|---------------------------------------------------------------|
 | `USE_GPIO_PADS` | Decides whether or not to use the gpio pads in routing by merging their LEF file set in `::env(USE_GPIO_ROUTING_LEF)` and blackboxing their verilog modules set in `::env(GPIO_PADS_VERILOG)`. 1=Enabled, 0=Disabled. <br> (Default: `0`) |
 | `LEC_ENABLE` | Enables logic verification using yosys, for comparing each netlist at each stage of the flow with the previous netlist and verifying that they are logically equivalent. Warning: this will increase the runtime significantly. 1 = Enabled, 0 = Disabled <br> (Default: `0`)|
+| `LEC_ENABLE_PRE_ROUTE` | Enables logic verification using yosys, for comparing the netlist generated before routing vs the initially generated netlist by yosys. This flag is overwritten by the value of `LEC_ENABLE` if `LEC_ENABLE` is set to `1`. 1 = Enabled, 0 = Disabled <br> (Default: `1`)|
 | `RUN_ROUTING_DETAILED` | Enables detailed routing. 1 = Enabled, 0 = Disabled <br> (Default: `1`)|
 | `RUN_MAGIC` | Enables running magic and GDSII streaming. 1 = Enabled, 0 = Disabled <br> (Default: `1`)|
 | `RUN_KLAYOUT` | Enables running Klayout and GDSII streaming. 1 = Enabled, 0 = Disabled <br> (Default: `1`)|

@@ -63,6 +63,7 @@ proc run_yosys {args} {
 
 	if { ! [info exists flags_map(-no_set_netlist)] } {
     	set_netlist $::env(SAVE_NETLIST)
+		set ::env(BASE_NETLIST) $::env(SAVE_NETLIST)
 	}
 
     if { $::env(LEC_ENABLE) && [file exists $::env(PREV_NETLIST)] } {
@@ -117,6 +118,7 @@ proc run_synthesis {args} {
 		puts_warn "A netlist at $::env(yosys_result_file_tag).v already exists..."
 		puts_warn "Skipping synthesis"
 		set_netlist $::env(yosys_result_file_tag).v
+		set ::env(BASE_NETLIST) $::env(yosys_result_file_tag).v
 	} else {
 		run_yosys
 	}

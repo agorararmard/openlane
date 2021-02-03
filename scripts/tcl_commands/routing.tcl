@@ -400,7 +400,11 @@ proc run_routing {args} {
     set_netlist $::env(yosys_result_file_tag)_preroute.v
     if { $::env(LEC_ENABLE) } {
 		logic_equiv_check -rhs $::env(PREV_NETLIST) -lhs $::env(CURRENT_NETLIST)
-    }
+    } else {
+		if { $::env(LEC_ENABLE_PRE_ROUTE) && [info exists ::env(BASE_NETLIST)] } {
+			logic_equiv_check -rhs $::env(BASE_NETLIST) -lhs $::env(CURRENT_NETLIST)
+		}
+	}
 
 
     # detailed routing
