@@ -5,10 +5,14 @@ name: Update Latest Tag Reference
 on:
   # Triggers the workflow on push  only for the master branches
   push:
-    branches: master
+    branches:
+      - master
+    tags:
+      - "v*"
 
 jobs:
   createPullRequest:
+    if: github.event.base_ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
