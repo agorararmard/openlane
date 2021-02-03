@@ -12,7 +12,7 @@ on:
 
 jobs:
   createPullRequest:
-    if: github.event.base_ref == 'refs/heads/test-tags'
+    if: github.event.base_ref == 'refs/heads/test-tags' || github.ref == 'refs/heads/test-tags'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
