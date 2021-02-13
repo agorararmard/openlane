@@ -25,7 +25,7 @@ RUN yum install -y csh wget tcl-devel tk-devel libX11-devel cairo-devel ncurses-
 
 # git clone netgen components
 ARG NETGEN_REPO=git://opencircuitdesign.com/netgen
-ARG NETGEN_COMMIT=a034fc16d6eb1080e4ee5de0eabf09970a08c74d
+ARG NETGEN_COMMIT=19471275dfd6a8df336612c219d2fa91051003d6
 RUN git clone ${NETGEN_REPO} netgen_21012021
 
 WORKDIR netgen_21012021
